@@ -83,6 +83,11 @@
 
 #define MAXWORDUTF8LEN (MAXWORDLEN * 3)
 
+#define PRINT_MARKER2 asm volatile(".byte 0x0F\n\t" \
+        ".byte 0x01\n\t" \
+        ".byte 0x10\n\t" \
+        :::)
+
 class HunspellImpl
 {
 public:
@@ -408,12 +413,12 @@ void HunspellImpl::insert_sug(std::vector<std::string>& slst, const std::string&
 }
 
 bool Hunspell::spell(const std::string& word, int* info, std::string* root) {
+  PRINT_MARKER2;
   return m_Impl->spell(word, info, root);
 }
 
 bool HunspellImpl::spell(const std::string& word, int* info, std::string* root) {
   struct hentry* rv = NULL;
-
   int info2 = 0;
   if (!info)
     info = &info2;
