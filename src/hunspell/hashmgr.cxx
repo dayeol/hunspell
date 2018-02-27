@@ -79,6 +79,26 @@
 #include "csutil.hxx"
 #include "atypes.hxx"
 
+#define START_TRACING asm volatile(".byte 0x0F\n\t" \
+        ".byte 0x01\n\t" \
+        ".byte 0x12\n\t" \
+        :::)
+
+#define STOP_TRACING asm volatile(".byte 0x0F\n\t" \
+        ".byte 0x01\n\t" \
+        ".byte 0x13\n\t" \
+        :::)
+
+#define PRINT_MARKER asm volatile(".byte 0x0F\n\t" \
+        ".byte 0x01\n\t" \
+        ".byte 0x11\n\t" \
+        :::)
+
+#define PRINT_MARKER3 asm volatile(".byte 0x0F\n\t" \
+        ".byte 0x01\n\t" \
+        ".byte 0x09\n\t" \
+        :::)
+
 // build a hash table from a munched word list
 
 HashMgr::HashMgr(const char* tpath, const char* apath, const char* key)
@@ -160,17 +180,50 @@ HashMgr::~HashMgr() {
 #endif
 }
 
-// lookup a root word in the hashtable
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+void print_word_addr_first(struct hentry *dp) {
+    PRINT_MARKER;
+    if (*(dp->word) == (char)NULL) {
+        PRINT_MARKER;
+    } else {
+        PRINT_MARKER;
+    }
+}
 
+void print_word_addr(struct hentry *dp) {
+    PRINT_MARKER3;
+    if (*(dp->word) == (char)NULL) {
+        PRINT_MARKER3;
+    } else {
+        PRINT_MARKER3;
+    }
+}
+#pragma GCC pop_options
+
+// lookup a root word in the hashtable
 struct hentry* HashMgr::lookup(const char* word) const {
   struct hentry* dp;
   if (tableptr) {
-    dp = tableptr[hash(word)];
-    if (!dp)
+    int i = hash(word);
+    PRINT_MARKER;
+    dp = tableptr[i];
+    PRINT_MARKER;
+    if (!dp) {
       return NULL;
-    for (; dp != NULL; dp = dp->next) {
-      if (strcmp(word, dp->word) == 0)
+    }
+    while (dp != NULL) {
+      print_word_addr(dp);
+      //PRINT_MARKER3;
+      //START_TRACING;
+      if (strcmp(word, dp->word) == 0) {
+        //STOP_TRACING;
+        //PRINT_MARKER3;
         return dp;
+      }
+      //STOP_TRACING;
+      //PRINT_MARKER3;
+      dp = dp->next;
     }
   }
   return NULL;
@@ -233,7 +286,13 @@ int HashMgr::add_word(const std::string& in_word,
   }
 
   char* hpw = hp->word;
+  if (!onlyupcase) print_word_addr_first(hp);
+  //if (!onlyupcase) PRINT_MARKER;
+  //if (!onlyupcase) START_TRACING;
   strcpy(hpw, word->c_str());
+  //if (!onlyupcase) STOP_TRACING;
+  //if (!onlyupcase) PRINT_MARKER;
+
 
   int i = hash(hpw);
 
@@ -257,16 +316,23 @@ int HashMgr::add_word(const std::string& in_word,
       hp->var += H_OPT_PHON;
   } else
     hp->var = 0;
-
-  struct hentry* dp = tableptr[i];
+  struct hentry* dp;
+  if (!onlyupcase) PRINT_MARKER3;
+  dp = tableptr[i];
+  if (!onlyupcase) PRINT_MARKER3;
   if (!dp) {
     tableptr[i] = hp;
     delete desc_copy;
     delete word_copy;
     return 0;
   }
+
   while (dp->next != NULL) {
+    //if (!onlyupcase) PRINT_MARKER3;
+    //if (!onlyupcase) START_TRACING;
+    if (!onlyupcase) print_word_addr(dp);
     if ((!dp->next_homonym) && (strcmp(hp->word, dp->word) == 0)) {
+      //if (!onlyupcase) STOP_TRACING;
       // remove hidden onlyupcase homonym
       if (!onlyupcase) {
         if ((dp->astr) && TESTAFF(dp->astr, ONLYUPCASEFLAG, dp->alen)) {
@@ -274,6 +340,7 @@ int HashMgr::add_word(const std::string& in_word,
           dp->astr = hp->astr;
           dp->alen = hp->alen;
           free(hp);
+          //if (!onlyupcase) PRINT_MARKER3;
           delete desc_copy;
           delete word_copy;
           return 0;
@@ -284,9 +351,17 @@ int HashMgr::add_word(const std::string& in_word,
         upcasehomonym = true;
       }
     }
+    //if (!onlyupcase) STOP_TRACING;
+    //if (!onlyupcase) PRINT_MARKER3;
+    
     dp = dp->next;
   }
+
+  //if (!onlyupcase) PRINT_MARKER3;
+  //if (!onlyupcase) START_TRACING;
+  if (!onlyupcase) print_word_addr(dp);
   if (strcmp(hp->word, dp->word) == 0) {
+    //if (!onlyupcase) STOP_TRACING;
     // remove hidden onlyupcase homonym
     if (!onlyupcase) {
       if ((dp->astr) && TESTAFF(dp->astr, ONLYUPCASEFLAG, dp->alen)) {
@@ -294,6 +369,7 @@ int HashMgr::add_word(const std::string& in_word,
         dp->astr = hp->astr;
         dp->alen = hp->alen;
         free(hp);
+        //if (!onlyupcase) PRINT_MARKER3;
         delete desc_copy;
         delete word_copy;
         return 0;
@@ -304,6 +380,9 @@ int HashMgr::add_word(const std::string& in_word,
       upcasehomonym = true;
     }
   }
+  //if (!onlyupcase) STOP_TRACING;
+  //if (!onlyupcase) PRINT_MARKER3;
+
   if (!upcasehomonym) {
     dp->next = hp;
   } else {
