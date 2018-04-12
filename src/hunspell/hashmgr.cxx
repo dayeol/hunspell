@@ -261,9 +261,14 @@ int HashMgr::add_word(const std::string& in_word,
 
   bool upcasehomonym = false;
   int descl = desc ? (aliasm ? sizeof(char*) : desc->size() + 1) : 0;
+  if (!onlyupcase) PRINT_MARKER1;
   // variable-length hash record with word and optional fields
   struct hentry* hp =
       (struct hentry*)malloc(sizeof(struct hentry) + word->size() + descl);
+  if (!onlyupcase) {
+      if (hp) ACCESS_DWORD(hp->next);
+      PRINT_MARKER1;
+  }
   if (!hp) {
     delete desc_copy;
     delete word_copy;
@@ -297,9 +302,9 @@ int HashMgr::add_word(const std::string& in_word,
     hp->var = 0;
   struct hentry* dp;
   if (!onlyupcase) {
-    PRINT_MARKER1;
+    PRINT_MARKER3;
     ACCESS_DWORD(tableptr[i]);
-    PRINT_MARKER1;
+    PRINT_MARKER3;
   }
   dp = tableptr[i];
   if (!dp) {
