@@ -95,6 +95,7 @@
 
 class HunspellImpl;
 
+
 class LIBHUNSPELL_DLL_EXPORTED Hunspell {
  private:
   Hunspell(const Hunspell&);

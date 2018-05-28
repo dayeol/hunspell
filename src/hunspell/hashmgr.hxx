@@ -81,6 +81,8 @@
 
 enum flag { FLAG_CHAR, FLAG_LONG, FLAG_NUM, FLAG_UNI };
 
+extern unsigned long long exec_time;
+
 class HashMgr {
   int tablesize;
   struct hentry** tableptr;

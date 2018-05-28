@@ -82,6 +82,8 @@
 
 // build a hash table from a munched word list
 
+unsigned long long exec_time = 0;
+
 HashMgr::HashMgr(const char* tpath, const char* apath, const char* key)
     : tablesize(0),
       tableptr(NULL),
@@ -166,12 +168,20 @@ HashMgr::~HashMgr() {
 struct hentry* HashMgr::lookup(const char* word) const {
   struct hentry* dp;
   if (tableptr) {
+    unsigned long long start = __rdtsc();
     dp = tableptr[hash(word)];
+    unsigned long long end = __rdtsc();
+    exec_time += end - start;    
     if (!dp)
       return NULL;
-    for (; dp != NULL; dp = dp->next) {
-      if (strcmp(word, dp->word) == 0)
+    while (dp != NULL) {
+      if (strcmp(word, dp->word) == 0) {
         return dp;
+      }
+      unsigned long long start2 = __rdtsc();
+      dp = dp->next;
+      unsigned long long end2 = __rdtsc();
+      exec_time += end2 - start2;
     }
   }
   return NULL;
@@ -258,10 +268,15 @@ int HashMgr::add_word(const std::string& in_word,
       hp->var += H_OPT_PHON;
   } else
     hp->var = 0;
-
+  unsigned long long start = __rdtsc();
   struct hentry* dp = tableptr[i];
+  unsigned long long end = __rdtsc();
+  exec_time += end - start;
   if (!dp) {
+    unsigned long long start2 = __rdtsc();
     tableptr[i] = hp;
+    unsigned long long end2 = __rdtsc();
+    exec_time += end2 - start2;
     delete desc_copy;
     delete word_copy;
     return 0;
@@ -285,6 +300,7 @@ int HashMgr::add_word(const std::string& in_word,
         upcasehomonym = true;
       }
     }
+    unsigned long long start3 = __rdtsc();
     dp = dp->next;
   }
   if (strcmp(hp->word, dp->word) == 0) {
