@@ -72,6 +72,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <x86intrin.h>
 #include <limits>
 #include <sstream>
 
