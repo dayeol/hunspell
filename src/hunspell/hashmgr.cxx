@@ -239,6 +239,8 @@ int HashMgr::add_word(const std::string& in_word,
 
   int i = hash(hpw);
 
+  printf("%d %s %lx %lx\n", i, hpw, hp, (void *) hp + sizeof(struct hentry) + word->size() + descl);
+
   hp->blen = (unsigned char)word->size();
   hp->clen = (unsigned char)wcl;
   hp->alen = (short)al;
