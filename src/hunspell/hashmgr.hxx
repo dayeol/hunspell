@@ -100,7 +100,8 @@ class HashMgr {
   unsigned short* aliasflen;
   int numaliasm;  // morphological desciption `compression' with aliases
   char** aliasm;
-  static unsigned long long exec_time;
+  static unsigned long long exec_time_node;
+  static unsigned long long exec_time_table;
 
  public:
   HashMgr(const char* tpath, const char* apath, const char* key = NULL);

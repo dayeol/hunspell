@@ -82,8 +82,17 @@
 
 // build a hash table from a munched word list
 
+#define ACCESS_DWORD(dword) \
+        do { \
+                register void * p; \
+                asm volatile("movq (%1), %0" : \
+                             "=q"(p) : \
+                             "q"(&(dword)) : \
+                             "memory"); \
+        } while (0)
 
-unsigned long long HashMgr::exec_time = 0;
+unsigned long long HashMgr::exec_time_node = 0;
+unsigned long long HashMgr::exec_time_table = 0;
 HashMgr::HashMgr(const char* tpath, const char* apath, const char* key)
     : tablesize(0),
       tableptr(NULL),
@@ -115,7 +124,8 @@ HashMgr::HashMgr(const char* tpath, const char* apath, const char* key)
 }
 
 HashMgr::~HashMgr() {
-  printf("Total time of memory accesses: %llu", exec_time);
+  printf("Total time of memory accesses for hash table: %llu\n", exec_time_table);
+  printf("Total time of memory accessses for nodes: %llu\n", exec_time_node);
   if (tableptr) {
     // now pass through hash table freeing up everything
     // go through column by column of the table
@@ -165,24 +175,35 @@ HashMgr::~HashMgr() {
 }
 
 // lookup a root word in the hashtable
+void clflush(unsigned char* addr)
+{
+  asm volatile("clflush (%0)" : : "r" (addr) : "memory");
+}
 
 struct hentry* HashMgr::lookup(const char* word) const {
   struct hentry* dp;
   if (tableptr) {
+    int i = hash(word);
     unsigned long long start = __rdtsc();
-    dp = tableptr[hash(word)];
+    ACCESS_DWORD(tableptr[i]);
     unsigned long long end = __rdtsc();
-    exec_time += end - start;    
+    exec_time_table += end - start;      
+    dp = tableptr[i];
     if (!dp)
       return NULL;
     while (dp != NULL) {
+      //clflush(((unsigned char *) &dp->next));
+      struct timespec ts = { 0, 10000 };
+      nanosleep(&ts, NULL);
+      unsigned long long start2 = __rdtsc();
+      ACCESS_DWORD(dp->next);
+      unsigned long long end2 = __rdtsc();
+      exec_time_node += end2 - start2;
+      
       if (strcmp(word, dp->word) == 0) {
         return dp;
       }
-      unsigned long long start2 = __rdtsc();
       dp = dp->next;
-      unsigned long long end2 = __rdtsc();
-      exec_time += end2 - start2;
     }
   }
   return NULL;
@@ -269,15 +290,12 @@ int HashMgr::add_word(const std::string& in_word,
       hp->var += H_OPT_PHON;
   } else
     hp->var = 0;
-  unsigned long long start = __rdtsc();
+//  unsigned long long start = __rdtsc();
   struct hentry* dp = tableptr[i];
-  unsigned long long end = __rdtsc();
-  exec_time += end - start;
+ // unsigned long long end = __rdtsc();
+ // exec_time_table += end - start;
   if (!dp) {
-    unsigned long long start2 = __rdtsc();
     tableptr[i] = hp;
-    unsigned long long end2 = __rdtsc();
-    exec_time += end2 - start2;
     delete desc_copy;
     delete word_copy;
     return 0;
@@ -301,10 +319,10 @@ int HashMgr::add_word(const std::string& in_word,
         upcasehomonym = true;
       }
     }
-    unsigned long long start3 = __rdtsc();
+    //unsigned long long start3 = __rdtsc();
     dp = dp->next;
-    unsigned long long end3 = __rdtsc();
-    exec_time += end3 - start3;
+    //unsigned long long end3 = __rdtsc();
+    //exec_time_node += end3 - start3;
   }
   if (strcmp(hp->word, dp->word) == 0) {
     // remove hidden onlyupcase homonym

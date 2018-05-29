@@ -2207,8 +2207,10 @@ int main(int argc, char** argv) {
 #ifdef HAVE_ICONV
   free_utf_tbl();
 #endif
-  for (int i = 0; i < dmax; i++)
+  for (int i = 0; i < dmax; i++) {
     delete pMS[i];
+  }
+
   return 0;
 }
 
