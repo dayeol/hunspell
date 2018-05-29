@@ -81,7 +81,6 @@
 
 enum flag { FLAG_CHAR, FLAG_LONG, FLAG_NUM, FLAG_UNI };
 
-extern unsigned long long exec_time;
 
 class HashMgr {
   int tablesize;
@@ -101,6 +100,7 @@ class HashMgr {
   unsigned short* aliasflen;
   int numaliasm;  // morphological desciption `compression' with aliases
   char** aliasm;
+  static unsigned long long exec_time;
 
  public:
   HashMgr(const char* tpath, const char* apath, const char* key = NULL);

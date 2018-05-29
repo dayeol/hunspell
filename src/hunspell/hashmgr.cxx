@@ -82,8 +82,8 @@
 
 // build a hash table from a munched word list
 
-unsigned long long exec_time = 0;
 
+unsigned long long HashMgr::exec_time = 0;
 HashMgr::HashMgr(const char* tpath, const char* apath, const char* key)
     : tablesize(0),
       tableptr(NULL),
@@ -115,6 +115,7 @@ HashMgr::HashMgr(const char* tpath, const char* apath, const char* key)
 }
 
 HashMgr::~HashMgr() {
+  printf("Total time of memory accesses: %llu", exec_time);
   if (tableptr) {
     // now pass through hash table freeing up everything
     // go through column by column of the table
@@ -302,6 +303,8 @@ int HashMgr::add_word(const std::string& in_word,
     }
     unsigned long long start3 = __rdtsc();
     dp = dp->next;
+    unsigned long long end3 = __rdtsc();
+    exec_time += end3 - start3;
   }
   if (strcmp(hp->word, dp->word) == 0) {
     // remove hidden onlyupcase homonym
