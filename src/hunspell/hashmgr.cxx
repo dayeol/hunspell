@@ -628,6 +628,8 @@ int HashMgr::load_tables(const char* tpath, const char* key) {
     return 3;
   }
 
+  printf("tableptr: %x\n", tableptr);
+
   // loop through all words on much list and add to hash
   // table and create word and affix strings
 
