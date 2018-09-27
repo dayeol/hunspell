@@ -239,7 +239,7 @@ int HashMgr::add_word(const std::string& in_word,
 
   int i = hash(hpw);
 
-  printf("%d %s %lx %lx\n", i, hpw, hp, (void *) hp + sizeof(struct hentry) + word->size() + descl);
+  printf("%d %s %lx %lx\n", i, hpw, (unsigned long)&hp->next, (unsigned long)hpw + word->size());
 
   hp->blen = (unsigned char)word->size();
   hp->clen = (unsigned char)wcl;
@@ -628,7 +628,7 @@ int HashMgr::load_tables(const char* tpath, const char* key) {
     return 3;
   }
 
-  printf("tableptr: %x\n", tableptr);
+  printf("tableptr: %lx\n", (unsigned long)tableptr);
 
   // loop through all words on much list and add to hash
   // table and create word and affix strings
