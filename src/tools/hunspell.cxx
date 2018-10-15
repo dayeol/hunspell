@@ -1753,7 +1753,18 @@ char* search(char* begin, char* name, const char* ext) {
   }
 }
 
+#define START_TRACING asm volatile(".byte 0x0F\n\t" \
+        ".byte 0x01\n\t" \
+        ".byte 0x12\n\t" \
+        :::)
+
+#define STOP_TRACING asm volatile(".byte 0x0F\n\t" \
+        ".byte 0x01\n\t" \
+        ".byte 0x13\n\t" \
+        :::)
+
 int main(int argc, char** argv) {
+  START_TRACING;
   std::string buf;
   Hunspell* pMS[DMAX];
   char* key = NULL;
@@ -2208,6 +2219,7 @@ int main(int argc, char** argv) {
 #endif
   for (int i = 0; i < dmax; i++)
     delete pMS[i];
+  STOP_TRACING;
   return 0;
 }
 
