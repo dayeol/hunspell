@@ -2220,9 +2220,12 @@ int main(int argc, char** argv) {
 
   read(pmc, pmc_buf, 80);
   sscanf(pmc_buf, "%lld %lld %lld", &cpu_cycles2, &cache_references2, &cache_misses2);
-  fprintf(stderr, "*** cpu cycles: %lld ***\n", cpu_cycles2 - cpu_cycles);
-  fprintf(stderr, "*** cache references: %lld ***\n", cache_references2 - cache_references);
-  fprintf(stderr, "*** cache misses: %lld ***\n", cache_misses2 - cache_misses);
+  cpu_cycles = cpu_cycles2 - cpu_cycles;
+  cache_references = cache_references2 - cache_references;
+  cache_misses = cache_misses2 - cache_misses;
+  fprintf(stderr, "*** cpu cycles = %lld, cache miss rate = %lld / %lld = %.3lf %% ***\n",
+          cpu_cycles, cache_misses, cache_references,
+          cache_references ? 100.0 * cache_misses / cache_references : 0.0);
 
   return 0;
 }
