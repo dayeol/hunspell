@@ -46,6 +46,7 @@
 #include <sstream>
 #include <string>
 #include <string.h>
+#include <fcntl.h>
 #include "../../config.h"
 #include "../hunspell/atypes.hxx"
 #include "../hunspell/hunspell.hxx"
@@ -1760,6 +1761,14 @@ int main(int argc, char** argv) {
   int arg_files = -1;  // first filename argumentum position in argv
   int format = FMT_TEXT;
   int argstate = 0;
+  int pmc = open("/dev/pmc", O_RDONLY);
+  char pmc_buf[80];
+  unsigned long long cpu_cycles, cpu_cycles2;
+  unsigned long long cache_references, cache_references2;
+  unsigned long long cache_misses, cache_misses2;
+
+  read(pmc, pmc_buf, 80);
+  sscanf(pmc_buf, "%lld %lld %lld", &cpu_cycles, &cache_references, &cache_misses);
 
 #ifdef HAVE_LOCALE_H
   setlocale(LC_ALL, "");
@@ -2208,6 +2217,13 @@ int main(int argc, char** argv) {
 #endif
   for (int i = 0; i < dmax; i++)
     delete pMS[i];
+
+  read(pmc, pmc_buf, 80);
+  sscanf(pmc_buf, "%lld %lld %lld", &cpu_cycles2, &cache_references2, &cache_misses2);
+  fprintf(stderr, "*** cpu cycles: %lld ***\n", cpu_cycles2 - cpu_cycles);
+  fprintf(stderr, "*** cache references: %lld ***\n", cache_references2 - cache_references);
+  fprintf(stderr, "*** cache misses: %lld ***\n", cache_misses2 - cache_misses);
+
   return 0;
 }
 
